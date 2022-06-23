@@ -1,0 +1,134 @@
+package com.mikeschvedov.whatshouldiwatch.ui.home.inner.movies
+
+import androidx.lifecycle.*
+import com.mikeschvedov.whatshouldiwatch.models.adapters.CategoryModel
+import com.mikeschvedov.whatshouldiwatch.models.adapters.ChildModel
+import com.mikeschvedov.whatshouldiwatch.models.response.*
+import com.mikeschvedov.whatshouldiwatch.networking.RemoteApi
+import com.mikeschvedov.whatshouldiwatch.ui.home.inner.adapters.OnClickPositionListener
+import com.mikeschvedov.whatshouldiwatch.ui.home.inner.adapters.ParentAdapter
+import com.mikeschvedov.whatshouldiwatch.utils.Constants
+import com.mikeschvedov.whatshouldiwatch.utils.Event
+import com.mikeschvedov.whatshouldiwatch.utils.ExceptionHandler.Companion.getExceptionMessage
+import com.mikeschvedov.whatshouldiwatch.utils.ExceptionHandler.Companion.mappingExceptions
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class DisplayMoviesViewModel @Inject constructor() : ViewModel() {
+
+    var currentRequestPage = 1
+
+    private val parentAdapter = ParentAdapter() { item ->
+        userClicksOnItemButton(item)
+    }
+    var successIndicator: Boolean = false
+
+    @Inject
+    lateinit var remoteApi: RemoteApi
+
+    //Single Event LiveData to notify fragment about the item that has been clicked
+    private val _navigateToDetails = MutableLiveData<Event<TmdbItem>>()
+    val navigateToDetails: LiveData<Event<TmdbItem>> get() = _navigateToDetails
+
+    // Top Rated Movies
+    private val _topRatedMovieList = MutableLiveData<CategoryModel>()
+    val topRatedMovieList: LiveData<CategoryModel> = _topRatedMovieList
+
+    // New Releases Movies
+    private val _newReleasesMovieList = MutableLiveData<CategoryModel>()
+    val newReleasesMovieList: LiveData<CategoryModel> = _newReleasesMovieList
+
+    // Popular Movies
+    private val _popularMovieList = MutableLiveData<CategoryModel>()
+    val popularMovieList: LiveData<CategoryModel> = _popularMovieList
+
+    // Now Playing Movies
+    private val _nowPlayingMovieList = MutableLiveData<CategoryModel>()
+    val nowPlayingMovieList: LiveData<CategoryModel> = _nowPlayingMovieList
+
+    // Exception Error
+    private val _errorMessage = MutableLiveData<String>()
+    val errorMessage: LiveData<String> get() = _errorMessage
+
+    // Success Flag
+    private val _successFlag = MutableLiveData<Boolean>()
+    val successFlag: LiveData<Boolean> get() = _successFlag
+
+    // Gets called on the search adapter callback
+    private fun userClicksOnItemButton(item: TmdbItem) {
+        _navigateToDetails.value =
+            Event(item)  // Trigger the event by setting a new Event as a new value
+    }
+
+    private fun getPopularMovies() {
+        handleResult(Constants.POPULAR_MOVIES, _popularMovieList)
+    }
+
+    private fun getNewReleasesMovies() {
+        handleResult(Constants.NEW_RELEASES_MOVIES, _newReleasesMovieList)
+    }
+
+    private fun topRatedMovies() {
+        handleResult(Constants.TOP_RATED_MOVIES, _topRatedMovieList)
+    }
+
+    private fun nowPlayingMovies() {
+        handleResult(Constants.NOW_PLAYING_MOVIES, _nowPlayingMovieList)
+    }
+
+    private fun handleResult(
+        endpointName: String,
+        listToUpdate: MutableLiveData<CategoryModel>
+    ) {
+        //false at beginning of call
+        successIndicator = false
+        _successFlag.postValue(successIndicator)
+
+        viewModelScope.launch {
+            // val result = remoteApi.latestMovies()
+            val result = decideMovieEndPoint(endpointName)
+
+            if (result is Success) {
+                // if the response is successful create a category
+                val category = createCategory(result.data.items, endpointName)
+                // setting the category to livedata
+                listToUpdate.postValue(category)
+                // true when we have success
+                successIndicator = true
+                _successFlag.postValue(successIndicator)
+            } else if (result is Failure) {
+                // handling error
+                // we map the throwable to our own exception
+                _errorMessage.postValue(getExceptionMessage(mappingExceptions(result.exc)))
+            }
+        }
+    }
+
+    private suspend fun decideMovieEndPoint(endpoint: String): Result<ItemWrapper<Movie>> {
+        return when (endpoint) {
+            Constants.POPULAR_MOVIES -> remoteApi.popularMovies()
+            Constants.NEW_RELEASES_MOVIES -> remoteApi.latestMovies()
+            Constants.TOP_RATED_MOVIES -> remoteApi.topRatedMovies()
+            Constants.NOW_PLAYING_MOVIES -> remoteApi.nowPlayingMovies()
+            else -> remoteApi.latestMovies()
+        }
+    }
+
+    fun getAdapter(): ParentAdapter {
+        return parentAdapter
+    }
+
+    private fun createCategory(list: List<Movie>, category: String): CategoryModel =
+        CategoryModel(category, list)
+
+
+    fun sendApiRequests() {
+        getNewReleasesMovies()
+        getPopularMovies()
+        topRatedMovies()
+        nowPlayingMovies()
+    }
+
+}

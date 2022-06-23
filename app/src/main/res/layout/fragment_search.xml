@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/faded_black"
+    tools:context=".ui.search.SearchFragment">
+
+    <FrameLayout
+        android:id="@+id/framview_search"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@color/black"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="36dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.appcompat.widget.SearchView
+            android:id="@+id/search_view"
+            android:layout_width="match_parent"
+            android:layout_height="70dp"
+            android:background="@drawable/searchview_background"
+            android:padding="8dp"
+            app:iconifiedByDefault="false"
+            app:queryHint="Search"
+            app:queryBackground="@color/transparent"
+            app:theme="@style/AppSearchView" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/frame_view_radio"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/frame_background"
+        android:orientation="vertical"
+
+        android:paddingBottom="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/framview_search">
+
+        <RadioGroup
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:padding="16dp">
+
+            <androidx.appcompat.widget.AppCompatRadioButton
+                android:id="@+id/radiobutton_movies"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:background="@drawable/radio_button_left_selector"
+                android:button="@color/faded_black"
+                android:fontFamily="@font/alfa_slab_one"
+                android:gravity="center"
+                android:textSize="16sp"
+                android:text="@string/movies"
+                android:textColor="@color/white" />
+
+            <androidx.appcompat.widget.AppCompatRadioButton
+                android:id="@+id/radiobutton_shows"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:textSize="16sp"
+                android:background="@drawable/radio_button_right_selector"
+                android:button="@color/faded_black"
+                android:fontFamily="@font/alfa_slab_one"
+                android:gravity="center"
+                android:text="@string/tv_shows"
+                android:textColor="@color/white" />
+
+        </RadioGroup>
+
+
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/error_textview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fontFamily="@font/viga"
+        android:gravity="center"
+        android:padding="32dp"
+        android:textColor="@color/white"
+        android:textSize="36sp" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/main_recyclerview"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:padding="10dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/frame_view_radio" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
