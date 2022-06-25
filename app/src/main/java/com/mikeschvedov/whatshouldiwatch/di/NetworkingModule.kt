@@ -1,7 +1,10 @@
 package com.mikeschvedov.whatshouldiwatch.di
 
+import android.content.Context
+import android.net.ConnectivityManager
+import androidx.core.content.ContextCompat.getSystemService
 import com.mikeschvedov.whatshouldiwatch.BuildConfig
-import com.mikeschvedov.whatshouldiwatch.networking.*
+import com.mikeschvedov.whatshouldiwatch.data.remote.networking.*
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -80,6 +83,7 @@ object NetworkingModule {
     fun provideTVService(retrofit: Retrofit): TvApi = retrofit.create(TvApi::class.java)
     @Provides
     fun providePersonService(retrofit: Retrofit): PersonApi = retrofit.create(PersonApi::class.java)
+
 
 
 /*

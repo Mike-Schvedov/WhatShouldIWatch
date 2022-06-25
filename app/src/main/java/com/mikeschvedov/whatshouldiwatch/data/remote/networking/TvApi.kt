@@ -1,4 +1,4 @@
-package com.mikeschvedov.whatshouldiwatch.networking
+package com.mikeschvedov.whatshouldiwatch.data.remote.networking
 
 import com.mikeschvedov.whatshouldiwatch.models.response.CreditWrapper
 import com.mikeschvedov.whatshouldiwatch.models.response.ItemWrapper

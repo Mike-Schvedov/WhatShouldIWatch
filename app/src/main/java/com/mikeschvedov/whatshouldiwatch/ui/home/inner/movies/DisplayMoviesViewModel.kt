@@ -2,28 +2,27 @@ package com.mikeschvedov.whatshouldiwatch.ui.home.inner.movies
 
 import androidx.lifecycle.*
 import com.mikeschvedov.whatshouldiwatch.models.adapters.CategoryModel
-import com.mikeschvedov.whatshouldiwatch.models.adapters.ChildModel
 import com.mikeschvedov.whatshouldiwatch.models.response.*
-import com.mikeschvedov.whatshouldiwatch.networking.RemoteApi
-import com.mikeschvedov.whatshouldiwatch.ui.home.inner.adapters.OnClickPositionListener
+import com.mikeschvedov.whatshouldiwatch.data.remote.networking.RemoteApi
+import com.mikeschvedov.whatshouldiwatch.data.repository.MediaRepository
 import com.mikeschvedov.whatshouldiwatch.ui.home.inner.adapters.ParentAdapter
 import com.mikeschvedov.whatshouldiwatch.utils.Constants
 import com.mikeschvedov.whatshouldiwatch.utils.Event
-import com.mikeschvedov.whatshouldiwatch.utils.ExceptionHandler.Companion.getExceptionMessage
-import com.mikeschvedov.whatshouldiwatch.utils.ExceptionHandler.Companion.mappingExceptions
+import com.mikeschvedov.whatshouldiwatch.utils.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class DisplayMoviesViewModel @Inject constructor() : ViewModel() {
 
-    var currentRequestPage = 1
+    @Inject
+    lateinit var mediaRepository: MediaRepository
 
     private val parentAdapter = ParentAdapter() { item ->
         userClicksOnItemButton(item)
     }
-    var successIndicator: Boolean = false
 
     @Inject
     lateinit var remoteApi: RemoteApi
@@ -62,57 +61,124 @@ class DisplayMoviesViewModel @Inject constructor() : ViewModel() {
             Event(item)  // Trigger the event by setting a new Event as a new value
     }
 
-    private fun getPopularMovies() {
-        handleResult(Constants.POPULAR_MOVIES, _popularMovieList)
+    // Get data from database
+    fun getDataFromDatabase() {
+        //  getAllDataFromApi()  //---> TODO: update database from api - test if really works
+        // Now we will get the data from the database
+        getNewReleasesMoviesFromDB()
+        getPopularMoviesFromDB()
+        getTopRatedMoviesFromDB()
+        getNowPlayingMoviesFromDB()
+        _successFlag.postValue(true)
     }
 
-    private fun getNewReleasesMovies() {
-        handleResult(Constants.NEW_RELEASES_MOVIES, _newReleasesMovieList)
-    }
+    //TODO : refactor all repeating code into a generic method
 
-    private fun topRatedMovies() {
-        handleResult(Constants.TOP_RATED_MOVIES, _topRatedMovieList)
-    }
-
-    private fun nowPlayingMovies() {
-        handleResult(Constants.NOW_PLAYING_MOVIES, _nowPlayingMovieList)
-    }
-
-    private fun handleResult(
-        endpointName: String,
-        listToUpdate: MutableLiveData<CategoryModel>
-    ) {
-        //false at beginning of call
-        successIndicator = false
-        _successFlag.postValue(successIndicator)
-
+    // Fetching data from database
+    private fun getPopularMoviesFromDB() {
         viewModelScope.launch {
-            // val result = remoteApi.latestMovies()
-            val result = decideMovieEndPoint(endpointName)
-
-            if (result is Success) {
-                // if the response is successful create a category
-                val category = createCategory(result.data.items, endpointName)
-                // setting the category to livedata
-                listToUpdate.postValue(category)
-                // true when we have success
-                successIndicator = true
-                _successFlag.postValue(successIndicator)
-            } else if (result is Failure) {
-                // handling error
-                // we map the throwable to our own exception
-                _errorMessage.postValue(getExceptionMessage(mappingExceptions(result.exc)))
+            val listToUpdate: MutableList<TmdbItem> = mutableListOf()
+            // We get all movies from database
+            mediaRepository.getMovies().observeForever() { listOfMovies ->
+                // We loop over all the movies in the database
+                listOfMovies.forEach { movieWithCategory ->
+                    // For each movie, we loop over the associated categories
+                    movieWithCategory.categories.forEach { category ->
+                        // If our relevant category is one of his associated categories,
+                        // add him to the list
+                        if (category.categoryName == Constants.POPULAR_MOVIES) {
+                            listToUpdate.add(movieWithCategory.movie)
+                        }
+                    }
+                    _popularMovieList.postValue(
+                        CategoryModel(
+                            Constants.POPULAR_MOVIES,
+                            listToUpdate
+                        )
+                    )
+                }
             }
         }
     }
 
-    private suspend fun decideMovieEndPoint(endpoint: String): Result<ItemWrapper<Movie>> {
-        return when (endpoint) {
-            Constants.POPULAR_MOVIES -> remoteApi.popularMovies()
-            Constants.NEW_RELEASES_MOVIES -> remoteApi.latestMovies()
-            Constants.TOP_RATED_MOVIES -> remoteApi.topRatedMovies()
-            Constants.NOW_PLAYING_MOVIES -> remoteApi.nowPlayingMovies()
-            else -> remoteApi.latestMovies()
+    // Fetching data from database
+    private fun getNewReleasesMoviesFromDB() {
+        viewModelScope.launch {
+            val listToUpdate: MutableList<TmdbItem> = mutableListOf()
+            // We get all movies from database
+            mediaRepository.getMovies().observeForever() { listOfMovies ->
+                // We loop over all the movies in the database
+                listOfMovies.forEach { movieWithCategory ->
+                    // For each movie, we loop over the associated categories
+                    movieWithCategory.categories.forEach { category ->
+                        // If our relevant category is one of his associated categories,
+                        // add him to the list
+                        if (category.categoryName == Constants.NEW_RELEASES_MOVIES) {
+                            listToUpdate.add(movieWithCategory.movie)
+                        }
+                    }
+                    _newReleasesMovieList.postValue(
+                        CategoryModel(
+                            Constants.NEW_RELEASES_MOVIES,
+                            listToUpdate
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    // Fetching data from database
+    private fun getTopRatedMoviesFromDB() {
+        viewModelScope.launch {
+            val listToUpdate: MutableList<TmdbItem> = mutableListOf()
+            // We get all movies from database
+            mediaRepository.getMovies().observeForever() { listOfMovies ->
+                // We loop over all the movies in the database
+                listOfMovies.forEach { movieWithCategory ->
+                    // For each movie, we loop over the associated categories
+                    movieWithCategory.categories.forEach { category ->
+                        // If our relevant category is one of his associated categories,
+                        // add him to the list
+                        if (category.categoryName == Constants.TOP_RATED_MOVIES) {
+                            listToUpdate.add(movieWithCategory.movie)
+                        }
+                    }
+                    _topRatedMovieList.postValue(
+                        CategoryModel(
+                            Constants.TOP_RATED_MOVIES,
+                            listToUpdate
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    // Fetching data from database
+    private fun getNowPlayingMoviesFromDB() {
+        viewModelScope.launch {
+            val listToUpdate: MutableList<TmdbItem> = mutableListOf()
+            // We get all movies from database
+            mediaRepository.getMovies().observeForever() { listOfMovies ->
+                // We loop over all the movies in the database
+                listOfMovies.forEach { movieWithCategory ->
+                    // For each movie, we loop over the associated categories
+                    movieWithCategory.categories.forEach { category ->
+                        // If our relevant category is one of his associated categories,
+                        // add him to the list
+                        if (category.categoryName == Constants.NOW_PLAYING_MOVIES) {
+                            listToUpdate.add(movieWithCategory.movie)
+                        }
+                    }
+                    _nowPlayingMovieList.postValue(
+                        CategoryModel(
+                            Constants.NOW_PLAYING_MOVIES,
+                            listToUpdate
+                        )
+                    )
+                }
+            }
         }
     }
 
@@ -120,15 +186,105 @@ class DisplayMoviesViewModel @Inject constructor() : ViewModel() {
         return parentAdapter
     }
 
-    private fun createCategory(list: List<Movie>, category: String): CategoryModel =
-        CategoryModel(category, list)
 
 
-    fun sendApiRequests() {
-        getNewReleasesMovies()
-        getPopularMovies()
-        topRatedMovies()
-        nowPlayingMovies()
+    private fun getAllDataFromApi() {
+
+        viewModelScope.launch(Dispatchers.IO){
+
+            /* --- Fetch data from the api --- */
+
+            val popularMovies = remoteApi.popularMovies()
+            val topRatedMovies = remoteApi.topRatedMovies()
+            val latestMovies = remoteApi.latestMovies()
+            val nowPlayingMovies = remoteApi.nowPlayingMovies()
+
+            /* --- Store in local database --- */
+
+            //TODO : refactor all repeating code into a generic method
+
+            // ------ Popular ------ //
+            if (popularMovies is Success) {
+
+                mediaRepository.addCategory(Category(1, Constants.POPULAR_MOVIES))
+
+                // put new data
+                popularMovies.data.items.forEach { movie->
+                    mediaRepository.addMovieWithCategoryCrossRef(
+                        MovieCategoryCrossRef(movie.id, 1)
+                    )
+                }
+            } else if (popularMovies is Failure) {
+                _errorMessage.postValue(
+                    ExceptionHandler.getExceptionMessage(
+                        ExceptionHandler.mappingExceptions(
+                            popularMovies.exc
+                        )
+                    )
+                )
+            }
+
+            // ------ Top Rated ------ //
+            if (topRatedMovies is Success) {
+
+                mediaRepository.addCategory(Category(2, Constants.TOP_RATED_MOVIES))
+
+                // put new data
+                topRatedMovies.data.items.forEach { movie->
+                    mediaRepository.addMovieWithCategoryCrossRef(
+                        MovieCategoryCrossRef(movie.id, 2)
+                    )
+                }
+            } else if (topRatedMovies is Failure) {
+                _errorMessage.postValue(
+                    ExceptionHandler.getExceptionMessage(
+                        ExceptionHandler.mappingExceptions(
+                            topRatedMovies.exc
+                        )
+                    )
+                )
+            }
+
+            // ------ New Releases ------ //
+            if (latestMovies is Success) {
+                mediaRepository.addCategory(Category(3, Constants.NEW_RELEASES_MOVIES))
+
+                // put new data
+                latestMovies.data.items.forEach { movie->
+                    mediaRepository.addMovieWithCategoryCrossRef(
+                        MovieCategoryCrossRef(movie.id, 3)
+                    )
+                }
+            } else if (latestMovies is Failure) {
+                _errorMessage.postValue(
+                    ExceptionHandler.getExceptionMessage(
+                        ExceptionHandler.mappingExceptions(
+                            latestMovies.exc
+                        )
+                    )
+                )
+            }
+
+            // ------ Now Playing ------ //
+            if (nowPlayingMovies is Success) {
+                mediaRepository.addCategory(Category(4, Constants.NOW_PLAYING_MOVIES))
+
+                // put new data
+                nowPlayingMovies.data.items.forEach { movie->
+                    mediaRepository.addMovieWithCategoryCrossRef(
+                        MovieCategoryCrossRef(movie.id, 4)
+                    )
+                }
+            } else if (nowPlayingMovies is Failure) {
+                _errorMessage.postValue(
+                    ExceptionHandler.getExceptionMessage(
+                        ExceptionHandler.mappingExceptions(
+                            nowPlayingMovies.exc
+                        )
+                    )
+                )
+            }
+
+        }
     }
-
 }

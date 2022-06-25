@@ -1,4 +1,4 @@
-package com.mikeschvedov.whatshouldiwatch.networking
+package com.mikeschvedov.whatshouldiwatch.data.remote.networking
 
 import com.mikeschvedov.whatshouldiwatch.BuildConfig
 import okhttp3.Interceptor

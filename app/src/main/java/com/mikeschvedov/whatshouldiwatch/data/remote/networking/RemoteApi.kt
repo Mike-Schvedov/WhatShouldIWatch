@@ -1,4 +1,4 @@
-package com.mikeschvedov.whatshouldiwatch.networking
+package com.mikeschvedov.whatshouldiwatch.data.remote.networking
 
 import com.mikeschvedov.whatshouldiwatch.models.response.*
 
@@ -12,7 +12,7 @@ interface RemoteApi {
     suspend fun movieTrailers(movieId: Int): Result<VideoWrapper>
     suspend fun movieCredits(movieId: Int): Result<CreditWrapper>
     suspend fun nowPlayingMovies(page: Int = 1): Result<ItemWrapper<Movie>>
-
+    suspend fun genres(): Result<GenreWrapper>
     //TV
     suspend fun popularTvShows(page: Int = 1): Result<ItemWrapper<TVShow>>
     suspend fun topRatedTvShows(page: Int = 1): Result<ItemWrapper<TVShow>>

@@ -1,4 +1,4 @@
-package com.mikeschvedov.whatshouldiwatch.networking
+package com.mikeschvedov.whatshouldiwatch.data.remote.networking
 
 import com.mikeschvedov.whatshouldiwatch.models.response.*
 import javax.inject.Inject
@@ -20,6 +20,13 @@ class RemoteApiImpl @Inject constructor(
     } catch (e: Exception) {
         Failure(e)
     }
+
+    override suspend fun genres(): Result<GenreWrapper> = try {
+        Success(movieApi.genres())
+    } catch (e: Exception) {
+        Failure(e)
+    }
+
 
     override suspend fun topRatedMovies(page: Int): Result<ItemWrapper<Movie>> = try {
         Success(movieApi.topRatedItems(page))

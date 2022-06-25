@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.mikeschvedov.whatshouldiwatch.models.response.Failure
 import com.mikeschvedov.whatshouldiwatch.models.response.Success
 import com.mikeschvedov.whatshouldiwatch.models.response.TmdbItem
-import com.mikeschvedov.whatshouldiwatch.networking.RemoteApi
+import com.mikeschvedov.whatshouldiwatch.data.remote.networking.RemoteApi
 import com.mikeschvedov.whatshouldiwatch.utils.Event
 import com.mikeschvedov.whatshouldiwatch.utils.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel

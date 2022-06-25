@@ -62,18 +62,13 @@ class OverviewFragment : Fragment() {
                 isDescOpen = true
             }
         }
-        // Back Button onClick
+     /*   // Back Button onClick
         binding.backButtonIv.setOnClickListener {
             parentFragmentManager.popBackStackImmediate()
-        }
+        }*/
     }
 
     private fun settingPassedArguments() {
-        //can be removed if everything works
-       /* val bundle: Bundle? = this.arguments
-        val m1: TmdbItem? = bundle?.getParcelable("media")
-        val year = m1?.releaseDate?.take(4)
-        val title = m1?.name*/
 
         val bundle = arguments?.getParcelable<TmdbItem>("media")
         val year = bundle?.releaseDate?.take(4)

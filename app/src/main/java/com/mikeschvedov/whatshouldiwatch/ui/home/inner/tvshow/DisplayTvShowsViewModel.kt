@@ -2,25 +2,29 @@ package com.mikeschvedov.whatshouldiwatch.ui.home.inner.tvshow
 
 import androidx.lifecycle.*
 import com.mikeschvedov.whatshouldiwatch.models.adapters.CategoryModel
-import com.mikeschvedov.whatshouldiwatch.models.adapters.ChildModel
 import com.mikeschvedov.whatshouldiwatch.models.response.*
-import com.mikeschvedov.whatshouldiwatch.networking.RemoteApi
+import com.mikeschvedov.whatshouldiwatch.data.remote.networking.RemoteApi
+import com.mikeschvedov.whatshouldiwatch.data.repository.MediaRepository
 import com.mikeschvedov.whatshouldiwatch.ui.home.inner.adapters.ParentAdapter
 import com.mikeschvedov.whatshouldiwatch.utils.Constants
 import com.mikeschvedov.whatshouldiwatch.utils.Event
+import com.mikeschvedov.whatshouldiwatch.utils.ExceptionHandler
 import com.mikeschvedov.whatshouldiwatch.utils.ExceptionHandler.Companion.getExceptionMessage
 import com.mikeschvedov.whatshouldiwatch.utils.ExceptionHandler.Companion.mappingExceptions
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class DisplayTvShowsViewModel @Inject constructor() : ViewModel() {
 
+    @Inject
+    lateinit var mediaRepository: MediaRepository
+
     private val parentAdapter = ParentAdapter(){item->
         userClicksOnItemButton(item)
     }
-    var successIndicator: Boolean = false
 
     @Inject
     lateinit var remoteApi: RemoteApi
@@ -55,65 +59,103 @@ class DisplayTvShowsViewModel @Inject constructor() : ViewModel() {
             Event(item)  // Trigger the event by setting a new Event as a new value
     }
 
-    private fun getPopularShows() {
-        handleResult(Constants.POPULAR_SHOW, _popularShowsList)
-    }
+    //TODO : refactor all repeating code into a generic method
 
-    private fun getNewReleasesShows() {
-        handleResult(Constants.NEW_RELEASES_SHOW, _newReleasesShowsList)
-    }
-
-    private fun topRatedShows() {
-        handleResult(Constants.TOP_RATED_SHOW, _topRatedShowsList)
-    }
-
-    private fun handleResult(
-        endpointName: String,
-        listToUpdate: MutableLiveData<CategoryModel>
-    ) {
-        //false at beginning of call
-        successIndicator = false
-        _successFlag.postValue(successIndicator)
-
+    // Fetching data from database
+    private fun getPopularTvShowsFromDB() {
         viewModelScope.launch {
-            // val result = remoteApi.latestMovies()
-            val result = decideShowEndPoint(endpointName)
-
-            if (result is Success) {
-                // if the response is successful create a category
-                val category = createCategory(result.data.items, endpointName)
-                // setting the category to livedata
-                listToUpdate.postValue(category)
-                // true when we have success
-                successIndicator = true
-                _successFlag.postValue(successIndicator)
-            } else if (result is Failure) {
-                // handling error
-                // we map the throwable to our own exception
-                _errorMessage.postValue(getExceptionMessage(mappingExceptions(result.exc)))
+            val listToUpdate: MutableList<TmdbItem> = mutableListOf()
+            // We get all movies from database
+            mediaRepository.getTvShows().observeForever() { listOfTvShows ->
+                // We loop over all the movies in the database
+                listOfTvShows.forEach { tvShowWithCategory ->
+                    // For each movie, we loop over the associated categories
+                    tvShowWithCategory.categories.forEach { category ->
+                        // If our relevant category is one of his associated categories,
+                        // add him to the list
+                        if (category.categoryName == Constants.POPULAR_SHOW) {
+                            listToUpdate.add(tvShowWithCategory.tvShow)
+                        }
+                    }
+                    _popularShowsList.postValue(
+                        CategoryModel(
+                            Constants.POPULAR_SHOW,
+                            listToUpdate
+                        )
+                    )
+                }
             }
         }
     }
 
-    private suspend fun decideShowEndPoint(endpoint: String): Result<ItemWrapper<TVShow>> {
-        return when(endpoint){
-            Constants.POPULAR_SHOW -> remoteApi.popularTvShows()
-            Constants.NEW_RELEASES_SHOW -> remoteApi.latestTvShows()
-            Constants.TOP_RATED_SHOW -> remoteApi.topRatedTvShows()
-            else -> remoteApi.popularTvShows()
+    // Fetching data from database
+    private fun getNewReleasesTvShowsFromDB() {
+        viewModelScope.launch {
+            val listToUpdate: MutableList<TmdbItem> = mutableListOf()
+            // We get all movies from database
+            mediaRepository.getTvShows().observeForever() { listOfTvShows ->
+                // We loop over all the movies in the database
+                listOfTvShows.forEach { tvShowWithCategory ->
+                    // For each movie, we loop over the associated categories
+                    tvShowWithCategory.categories.forEach { category ->
+                        // If our relevant category is one of his associated categories,
+                        // add him to the list
+                        if (category.categoryName == Constants.NEW_RELEASES_SHOW) {
+                            listToUpdate.add(tvShowWithCategory.tvShow)
+                        }
+                    }
+                    _newReleasesShowsList.postValue(
+                        CategoryModel(
+                            Constants.NEW_RELEASES_SHOW,
+                            listToUpdate
+                        )
+                    )
+                }
+            }
         }
     }
+
+    // Fetching data from database
+    private fun getTopRatedTvShowsFromDB() {
+        viewModelScope.launch {
+            val listToUpdate: MutableList<TmdbItem> = mutableListOf()
+            // We get all movies from database
+            mediaRepository.getTvShows().observeForever() { listOfTvShows ->
+                // We loop over all the movies in the database
+                listOfTvShows.forEach { tvShowWithCategory ->
+                    // For each movie, we loop over the associated categories
+                    tvShowWithCategory.categories.forEach { category ->
+                        // If our relevant category is one of his associated categories,
+                        // add him to the list
+                        if (category.categoryName == Constants.TOP_RATED_SHOW) {
+                            listToUpdate.add(tvShowWithCategory.tvShow)
+                        }
+                    }
+                    _topRatedShowsList.postValue(
+                        CategoryModel(
+                            Constants.TOP_RATED_SHOW,
+                            listToUpdate
+                        )
+                    )
+                }
+            }
+        }
+    }
+
 
     fun getAdapter(): ParentAdapter {
         return parentAdapter
     }
 
-    private fun createCategory(list: List<TVShow>, category: String): CategoryModel =
-        CategoryModel(category, list)
+    // Get data from database
+    fun getDataFromDatabase() {
+     //   getAllDataFromApi()  //---> TODO: update database from api - test if really works
+        // Now we will get the data from the database
+        getPopularTvShowsFromDB()
+        getNewReleasesTvShowsFromDB()
+        getTopRatedTvShowsFromDB()
 
-    fun sendApiRequests() {
-        getPopularShows()
-        topRatedShows()
-        getNewReleasesShows()
+        _successFlag.postValue(true)
     }
+
 }

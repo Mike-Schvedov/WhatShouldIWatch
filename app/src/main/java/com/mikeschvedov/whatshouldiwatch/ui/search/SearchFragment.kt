@@ -14,8 +14,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import com.mikeschvedov.whatshouldiwatch.R
+import com.mikeschvedov.whatshouldiwatch.data.remote.networking.NetworkStatusChecker
 import com.mikeschvedov.whatshouldiwatch.databinding.FragmentSearchBinding
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class SearchFragment : Fragment() {
@@ -146,11 +148,13 @@ class SearchFragment : Fragment() {
                     //save the current query to use it when clicking on filter
                     currentQuery = query
                     // check the filter selected
+
                     if (binding.radiobuttonMovies.isChecked && currentQuery.length > 1) {
                         searchViewModel.sendMovieSearchRequest(query)
                     } else if (binding.radiobuttonShows.isChecked && currentQuery.length > 1) {
                         searchViewModel.sendSeriesSearchRequest(query)
                     }
+
                 }
 
                 if (query.isEmpty()) {
@@ -172,6 +176,8 @@ class SearchFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+
+        binding.errorTextview.text = ""
 
         //Return movies to be selected
         binding.radiobuttonMovies.isChecked = true

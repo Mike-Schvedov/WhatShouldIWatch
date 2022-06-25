@@ -1,9 +1,6 @@
-package com.mikeschvedov.whatshouldiwatch.networking
+package com.mikeschvedov.whatshouldiwatch.data.remote.networking
 
-import com.mikeschvedov.whatshouldiwatch.models.response.CreditWrapper
-import com.mikeschvedov.whatshouldiwatch.models.response.ItemWrapper
-import com.mikeschvedov.whatshouldiwatch.models.response.Movie
-import com.mikeschvedov.whatshouldiwatch.models.response.VideoWrapper
+import com.mikeschvedov.whatshouldiwatch.models.response.*
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -31,4 +28,6 @@ interface MovieApi {
     @GET("3/movie/{movieId}/credits")
     suspend fun movieCredit(@Path("movieId") movieId: Int): CreditWrapper
 
+    @GET("3/genre/movie/list?language=en-US")
+    suspend fun genres(): GenreWrapper
 }

@@ -3,6 +3,11 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/M220/AndroidStudioProjects/WhatShouldIWatch/app/src/main/res/layout/fragment_display_movies.xml" value="0.1" />
+        <entry key="..\:/Users/M220/AndroidStudioProjects/WhatShouldIWatch/app/src/main/res/layout/fragment_display_tv_show.xml" value="0.1" />
+        <entry key="..\:/Users/M220/AndroidStudioProjects/WhatShouldIWatch/app/src/main/res/layout/fragment_home.xml" value="0.1" />
+        <entry key="..\:/Users/M220/AndroidStudioProjects/WhatShouldIWatch/app/src/main/res/layout/fragment_search.xml" value="0.1" />
+        <entry key="..\:/Users/M220/AndroidStudioProjects/WhatShouldIWatch/app/src/main/res/layout/overview_fragment.xml" value="0.1" />
         <entry key="..\:/Users/MS220/AndroidStudioProjects/Day23/app/src/main/res/drawable/back_btn_backgroudn.xml" value="0.26" />
         <entry key="..\:/Users/MS220/AndroidStudioProjects/Day23/app/src/main/res/drawable/back_btn_background.xml" value="0.206" />
         <entry key="..\:/Users/MS220/AndroidStudioProjects/Day23/app/src/main/res/drawable/bnv_tab_color_selector.xml" value="0.1245" />

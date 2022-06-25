@@ -16,7 +16,7 @@
         <activity
             android:windowSoftInputMode="adjustPan"
             android:configChanges="keyboardHidden|orientation|screenSize"
-            android:name="com.mikeschvedov.whatshouldiwatch.MainActivity"
+            android:name="com.mikeschvedov.whatshouldiwatch.ui.main.MainActivity"
             android:exported="true"
             android:label="@string/app_name">
             <intent-filter>
