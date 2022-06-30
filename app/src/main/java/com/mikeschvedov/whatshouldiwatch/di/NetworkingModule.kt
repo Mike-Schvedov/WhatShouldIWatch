@@ -8,6 +8,7 @@ import com.mikeschvedov.whatshouldiwatch.data.remote.networking.*
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -79,12 +80,17 @@ object NetworkingModule {
 
     @Provides
     fun provideMovieService(retrofit: Retrofit): MovieApi = retrofit.create(MovieApi::class.java)
+
     @Provides
     fun provideTVService(retrofit: Retrofit): TvApi = retrofit.create(TvApi::class.java)
+
     @Provides
     fun providePersonService(retrofit: Retrofit): PersonApi = retrofit.create(PersonApi::class.java)
 
-
+    @Provides
+    fun provideConnectivityManager(@ApplicationContext appContext: Context): ConnectivityManager {
+       return  appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    }
 
 /*
 

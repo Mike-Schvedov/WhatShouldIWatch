@@ -2,6 +2,7 @@ package com.mikeschvedov.whatshouldiwatch.data.repository
 
 import androidx.lifecycle.LiveData
 import com.mikeschvedov.whatshouldiwatch.models.response.*
+import kotlinx.coroutines.flow.Flow
 
 interface MediaRepository {
      // -- Movies -- //
@@ -15,6 +16,11 @@ interface MediaRepository {
      // -- Category -- //
      suspend fun addCategory(category: Category)
      suspend fun getCategories(): LiveData<List<Category>>
+     fun getMoviesByCategory(categoryId: Long) : CategoryWithMovies
+
+     fun getCategoryWithMovies(): List<CategoryWithMovies>
+     fun getCategoryWithTvShows(): Flow<List<CategoryWithTvShows>>
+
 
      // -- TvShow -- //
      suspend fun addTvShows(tvShows: List<TVShow>)

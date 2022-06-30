@@ -1,7 +1,7 @@
 package com.mikeschvedov.whatshouldiwatch.ui.home.inner.tvshow
 
 import android.content.Context
-import android.net.ConnectivityManager
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,17 +9,21 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.mikeschvedov.whatshouldiwatch.R
 import com.mikeschvedov.whatshouldiwatch.data.remote.networking.NetworkStatusChecker
-import com.mikeschvedov.whatshouldiwatch.models.adapters.CategoryModel
 import com.mikeschvedov.whatshouldiwatch.databinding.FragmentDisplayTvShowBinding
 import com.mikeschvedov.whatshouldiwatch.models.response.TmdbItem
 import com.mikeschvedov.whatshouldiwatch.ui.home.inner.adapters.ParentAdapter
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class DisplayTvShowsFragment : Fragment() {
@@ -27,12 +31,10 @@ class DisplayTvShowsFragment : Fragment() {
     private var _binding: FragmentDisplayTvShowBinding? = null
     private val binding get() = _binding!!
 
-    var categoryListTv: MutableList<CategoryModel> = mutableListOf()
-
     lateinit var displayTvShowsViewModel: DisplayTvShowsViewModel
     lateinit var adapter: ParentAdapter
 
-    //TODO inject
+    @Inject
     lateinit var networkStatusChecker: NetworkStatusChecker
 
     override fun onCreateView(
@@ -40,9 +42,6 @@ class DisplayTvShowsFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        //TODO inject
-        networkStatusChecker =
-            NetworkStatusChecker(context?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager?)
 
         /* View Model */
         displayTvShowsViewModel =
@@ -57,8 +56,8 @@ class DisplayTvShowsFragment : Fragment() {
         binding.mainRecyclerview.layoutManager = LinearLayoutManager(requireContext())
         binding.mainRecyclerview.adapter = adapter
 
-        /* Starting Api Call */
-        displayTvShowsViewModel.getDataFromDatabase()
+        /* Get data from database to be displayed */
+        decideFirstTimeFetching()
 
         /* Setting LiveData Observers */
         setLiveDataObservers()
@@ -68,41 +67,50 @@ class DisplayTvShowsFragment : Fragment() {
         return root
     }
 
-    private fun setLiveDataObservers() {
-        // Popular movie list
-        displayTvShowsViewModel.popularShowsList.observe(viewLifecycleOwner) { category ->
-            updateCategory(category, adapter)
+    private fun decideFirstTimeFetching() {
+        // If its the first run of the app populate the database,
+        // Also save in shared pref if its the first time or not
+        // After first time, it will not populate the DB, only fetch data from it.
+        val sharedPref = getSharedPref()
+        val isFirstRun = sharedPref?.getBoolean("isFirstRunMovieTV", true) // the default is true
+        if (isFirstRun == true) {
+            // If its the first time running the app, populate the DB and get data
+            displayTvShowsViewModel.updateDBAndFetchTvShows()
+            // Set shared pref that it is no longer first time
+            with(sharedPref.edit()) {
+                putBoolean("isFirstRunMovieTV", false)
+                apply()
+            }
+        } else {
+            // If it is not the first time running the app, only fetch the data to be displayed
+            displayTvShowsViewModel.fetchTvShowsPageMedia()
         }
-        // Top Rated movie list
-        displayTvShowsViewModel.topRatedShowsList.observe(viewLifecycleOwner) { category ->
-            updateCategory(category, adapter)
-        }
-        // New Releases movie list
-        displayTvShowsViewModel.newReleasesShowsList.observe(viewLifecycleOwner) { category ->
-            updateCategory(category, adapter)
-        }
+    }
 
-        // Error Observer
-        displayTvShowsViewModel.errorMessage.observe(viewLifecycleOwner) { error ->
-            Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show()
-            // hide the swipe to refresh bar also if we get a message
-            binding.swipeContainer.isRefreshing = false
-        }
-        // Success Observer
-        displayTvShowsViewModel.successFlag.observe(viewLifecycleOwner) { flag ->
-            if (flag) {
-                // dealing with the swipe to refresh progress bar
-                binding.swipeContainer.isRefreshing = false
+    private fun getSharedPref(): SharedPreferences? {
+        return activity?.getPreferences(Context.MODE_PRIVATE)
+    }
+
+    private fun setLiveDataObservers() {
+        // All media list
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                displayTvShowsViewModel.showsFullMediaList.collectLatest { mediaGroupList ->
+                    adapter.submitList(mediaGroupList.list)
+                    adapter.notifyDataSetChanged()
+                }
             }
         }
 
         // Navigation Observer
-        displayTvShowsViewModel.navigateToDetails.observe(viewLifecycleOwner) { event ->
-            // we get the content with the wrapped in the event
-            event.getContentIfNotHandled()
-                ?.let { itemWithoutEvent ->// Only proceed if the event has never been handled
-                    startOverViewFragment(itemWithoutEvent)
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                displayTvShowsViewModel.clicked.collect { item: TmdbItem? ->
+                    if (item != null) {
+                        startOverViewFragment(item)
+                    }
                 }
+            }
         }
     }
 
@@ -110,8 +118,9 @@ class DisplayTvShowsFragment : Fragment() {
         binding.swipeContainer.setOnRefreshListener {
             // If there is internet do this
             networkStatusChecker.performIfConnectedToInternet {
-                displayTvShowsViewModel.getDataFromDatabase()
+               // displayTvShowsViewModel.getDataFromDatabase()
             }
+            binding.swipeContainer.isRefreshing = false
         }
     }
 
@@ -121,40 +130,9 @@ class DisplayTvShowsFragment : Fragment() {
         findNavController().navigate(R.id.navigation_overview, bundle)
     }
 
-    private fun updateCategory(
-        category: CategoryModel,
-        adapter: ParentAdapter
-    ) {
-        if (!checkIfContains(category)) {
-            categoryListTv.add(category)
-        }
-        updateAdapter(adapter)
-    }
-
-    private fun checkIfContains(category: CategoryModel): Boolean {
-        categoryListTv.forEach {
-            if (it.title == category.title) {
-                return true
-            }
-        }
-        return false
-    }
-
-    private fun updateAdapter(adapter: ParentAdapter) {
-        adapter.submitList(categoryListTv)
-        adapter.notifyDataSetChanged()
-    }
-
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
 
-    override fun onResume() {
-        super.onResume()
-        categoryListTv.clear()
-        /*---------- Resending Api Call ----------*/
-        displayTvShowsViewModel.getDataFromDatabase()
-
-    }
 }

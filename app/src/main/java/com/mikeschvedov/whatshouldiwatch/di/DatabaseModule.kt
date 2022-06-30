@@ -22,7 +22,7 @@ object DatabaseModule {
 
     @Provides
     fun provideMovieDao(movieDB: MovieDB) =
-        movieDB.movieDao()
+        movieDB.mediaDao()
 
 
 }

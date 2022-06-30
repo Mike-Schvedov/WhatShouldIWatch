@@ -15,19 +15,32 @@
         android:id="@+id/navigation_favorites"
         android:name="com.mikeschvedov.whatshouldiwatch.ui.favorites.FavoritesFragment"
         android:label="Favorites"
-        tools:layout="@layout/favorites_fragment" />
+        tools:layout="@layout/favorites_fragment" >
+        <action
+            android:id="@+id/action_navigation_favorites_to_navigation_overview"
+            app:destination="@id/navigation_overview" />
+    </fragment>
 
     <fragment
         android:id="@+id/navigation_home"
         android:name="com.mikeschvedov.whatshouldiwatch.ui.home.HomeFragment"
         android:label="@string/title_home"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_home" >
+        <action
+            android:id="@+id/action_navigation_home_to_navigation_overview"
+            app:destination="@id/navigation_overview" />
+    </fragment>
 
     <fragment
         android:id="@+id/navigation_search"
         android:name="com.mikeschvedov.whatshouldiwatch.ui.search.SearchFragment"
         android:label="@string/title_search"
-        tools:layout="@layout/fragment_search" />
+        tools:layout="@layout/fragment_search" >
+        <action
+            android:id="@+id/action_navigation_search_to_navigation_overview"
+            app:destination="@id/navigation_overview"
+            app:popUpTo="@id/navigation_search" />
+    </fragment>
 
     <fragment
         android:id="@+id/navigation_settings"

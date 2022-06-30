@@ -100,6 +100,16 @@ dependencies {
     kapt("androidx.room:room-compiler:$roomVersion")
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
 
+    // Paging 3
+    implementation "androidx.paging:paging-runtime:3.1.1"
+
+    // Glide
+    implementation 'com.github.bumptech.glide:glide:4.13.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.13.0'
+
+    //work manager
+    // Kotlin + coroutines
+    implementation("androidx.work:work-runtime-ktx:2.7.1")
 }
 
 // Allow references to generated code

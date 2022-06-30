@@ -27,7 +27,6 @@ class RemoteApiImpl @Inject constructor(
         Failure(e)
     }
 
-
     override suspend fun topRatedMovies(page: Int): Result<ItemWrapper<Movie>> = try {
         Success(movieApi.topRatedItems(page))
     } catch (e: Exception) {

@@ -3,6 +3,7 @@ package com.mikeschvedov.whatshouldiwatch.data.local.database.daos
 import androidx.lifecycle.LiveData
 import androidx.room.*
 import com.mikeschvedov.whatshouldiwatch.models.response.*
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MediaDao {
@@ -31,6 +32,9 @@ interface MediaDao {
         addMovieCategoryCrossRef(MovieCategoryCrossRef(movie.id, category.categoryId))
     }
 
+    @Query("SELECT * FROM category WHERE categoryId = :categoryId")
+    fun getMoviesByCategory(categoryId:Long) : CategoryWithMovies
+
     // ------------ Category ---------------- //
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -38,6 +42,21 @@ interface MediaDao {
 
     @Query("SELECT * FROM category")
     fun getCategories(): LiveData<List<Category>>
+
+    @Transaction
+    @Query("SELECT * FROM category")
+    fun getCategoryWithMovies(): List<CategoryWithMovies>
+
+   /* // Option A - not working
+    @Transaction
+    @Query("SELECT * FROM category")
+    fun getCategoryWithTvShows(): Flow<List<CategoryWithTvShows>>
+*/
+    // Option B - working
+        @Transaction
+        @Query("SELECT * FROM category")
+        fun getCategoryWithTvShows(): List<CategoryWithTvShows>
+
 
     // ------------ Tv Shows ---------------- //
 

@@ -6,7 +6,6 @@ import androidx.fragment.app.FragmentPagerAdapter
 import com.mikeschvedov.whatshouldiwatch.ui.home.inner.movies.DisplayMoviesFragment
 import com.mikeschvedov.whatshouldiwatch.ui.home.inner.tvshow.DisplayTvShowsFragment
 
-
 class ViewPagerAdapter(fm: FragmentManager, var tabCount: Int) : FragmentPagerAdapter(fm) {
 
     override fun getItem(position: Int): Fragment {

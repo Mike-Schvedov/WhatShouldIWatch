@@ -3,6 +3,9 @@ package com.mikeschvedov.whatshouldiwatch.data.repository
 import androidx.lifecycle.LiveData
 import com.mikeschvedov.whatshouldiwatch.data.local.database.daos.MediaDao
 import com.mikeschvedov.whatshouldiwatch.models.response.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class MediaRepositoryImpl @Inject constructor(
@@ -20,6 +23,23 @@ class MediaRepositoryImpl @Inject constructor(
     // -- Category -- //
     override suspend fun addCategory(category: Category) = mediaDao.addCategory(category)
     override suspend fun getCategories(): LiveData<List<Category>> = mediaDao.getCategories()
+
+    override fun getCategoryWithMovies(): List<CategoryWithMovies> =
+        mediaDao.getCategoryWithMovies()
+
+    // Option A - not working
+/*    override fun getCategoryWithTvShows() =
+        mediaDao.getCategoryWithTvShows()*/
+
+    // Option B - working
+       override fun getCategoryWithTvShows() = flow {
+           emit(mediaDao.getCategoryWithTvShows())
+       }
+
+
+
+    override fun getMoviesByCategory(categoryId: Long): CategoryWithMovies =
+        mediaDao.getMoviesByCategory(categoryId)
 
     // -- Tv Show -- //
     override suspend fun addTvShows(tvShows: List<TVShow>) = mediaDao.addTvShows(tvShows)

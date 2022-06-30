@@ -13,15 +13,19 @@ import androidx.recyclerview.widget.RecyclerView
 import com.mikeschvedov.whatshouldiwatch.R
 import com.mikeschvedov.whatshouldiwatch.models.response.TmdbItem
 import com.mikeschvedov.whatshouldiwatch.ui.home.inner.adapters.OnClickPositionListener
+import com.mikeschvedov.whatshouldiwatch.ui.home.inner.adapters.ParentAdapter
 import com.mikeschvedov.whatshouldiwatch.utils.Constants
+import com.mikeschvedov.whatshouldiwatch.utils.ItemWrapper
 import com.squareup.picasso.Picasso
+import kotlinx.coroutines.flow.MutableStateFlow
 import javax.inject.Inject
 
-class SearchAdapter @Inject constructor(private val listener: OnClickPositionListener) : RecyclerView.Adapter<SearchAdapter.SearchViewHolder>() {
+class SearchAdapter @Inject constructor() : RecyclerView.Adapter<SearchAdapter.SearchViewHolder>() {
 
     var list: MutableList<TmdbItem> = mutableListOf()
 
-
+    // Item flow that will be used as a callback
+    var itemHotFlow: MutableStateFlow<ItemWrapper> = MutableStateFlow(ItemWrapper())
 
     // add new data
     fun setNewData(newData: List<TmdbItem>) {
@@ -67,7 +71,8 @@ class SearchAdapter @Inject constructor(private val listener: OnClickPositionLis
         }
 
         holder.imageview.setOnClickListener {
-            listener.onItemClicked(position)
+            // a flow that is used as a callback
+            itemHotFlow.value = ItemWrapper(item)
         }
     }
 

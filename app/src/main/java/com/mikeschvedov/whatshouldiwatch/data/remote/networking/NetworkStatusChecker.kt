@@ -5,7 +5,7 @@ import android.net.NetworkCapabilities
 import javax.inject.Inject
 
 
-class NetworkStatusChecker (private val connectivityManager: ConnectivityManager?) {
+class NetworkStatusChecker @Inject constructor (private val connectivityManager: ConnectivityManager?) {
 
         // inline methods are copied to the user class
         inline fun performIfConnectedToInternet(action: () -> Unit) {

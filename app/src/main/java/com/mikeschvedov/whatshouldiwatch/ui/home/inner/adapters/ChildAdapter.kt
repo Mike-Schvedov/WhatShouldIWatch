@@ -4,15 +4,15 @@ import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AbsListView
 import android.widget.ImageView
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mikeschvedov.whatshouldiwatch.R
 import com.mikeschvedov.whatshouldiwatch.utils.Constants
-import com.mikeschvedov.whatshouldiwatch.models.adapters.ChildModel
 import com.mikeschvedov.whatshouldiwatch.models.response.TmdbItem
+import com.mikeschvedov.whatshouldiwatch.utils.toFlow
 import com.squareup.picasso.Picasso
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 
 class ChildAdapter(val childList: List<TmdbItem>, private val listener: OnClickItemListener) :
@@ -36,7 +36,9 @@ class ChildAdapter(val childList: List<TmdbItem>, private val listener: OnClickI
         // We get the image path ending (image.jpg)
         val imagePathEnding = childList[position].posterPath
         Picasso.get().load(Uri.parse(Constants.IMAGE_LOCATION + imagePathEnding)).into(holder.childImageview)
+        // converting the item to a flow
 
+        // passing the flow into the callback
         holder.childImageview.setOnClickListener {
             listener.onItemClicked(childList[position])
         }
@@ -46,4 +48,8 @@ class ChildAdapter(val childList: List<TmdbItem>, private val listener: OnClickI
     override fun getItemCount(): Int {
         return childList.size
     }
+
+   /* private fun toFlow(tmdbItem: TmdbItem) = flow{
+        emit(tmdbItem)
+    }*/
 }

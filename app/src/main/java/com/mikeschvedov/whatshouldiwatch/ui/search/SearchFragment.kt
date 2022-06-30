@@ -6,18 +6,17 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.SearchView
-import android.widget.Toast
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.*
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import com.mikeschvedov.whatshouldiwatch.R
-import com.mikeschvedov.whatshouldiwatch.data.remote.networking.NetworkStatusChecker
 import com.mikeschvedov.whatshouldiwatch.databinding.FragmentSearchBinding
+import com.mikeschvedov.whatshouldiwatch.models.response.TmdbItem
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class SearchFragment : Fragment() {
@@ -27,6 +26,8 @@ class SearchFragment : Fragment() {
 
     var currentQuery: String = ""
 
+    lateinit var adapter: SearchAdapter
+
     lateinit var searchViewModel: SearchViewModel
 
     override fun onCreateView(
@@ -34,55 +35,29 @@ class SearchFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-
         /*---------- View Model ----------*/
         searchViewModel =
             ViewModelProvider(this)[SearchViewModel::class.java]
+
         /*---------- Binding ----------*/
         _binding = FragmentSearchBinding.inflate(inflater, container, false)
         val root: View = binding.root
+
         /*---------- Adapter ----------*/
-        val adapter = searchViewModel.getAdapter()
+        adapter = searchViewModel.getAdapter()
         binding.mainRecyclerview.layoutManager = GridLayoutManager(requireContext(), 3)
         binding.mainRecyclerview.adapter = adapter
-        /*---------- Observers ----------*/
-        // List Observer
-        searchViewModel.resultList.observe(viewLifecycleOwner) { resultList ->
-            if (currentQuery.isNotEmpty()) {
-                resultList?.let {
-                    adapter.setNewData(resultList)
-                }
-            }
-        }
-        // Error Observer
-        searchViewModel.errorMessage.observe(viewLifecycleOwner) { error ->
-            //we get the error (if there is one) but only if there is some query inserted.
-            error.getContentIfNotHandled()
-                ?.let { message ->// Only proceed if the event has never been handled
-                    binding.errorTextview.text = message
-                }
-        }
 
-        // Fetching Progress Observer
-        searchViewModel.fetchingIsProgress.observe(viewLifecycleOwner) { flag ->
-            //if we are still fetching data, do not show any messages
-            if (flag) {
-                binding.errorTextview.visibility = View.GONE
-            } else {
-                //if we are not fetching data, show message
-                binding.errorTextview.visibility = View.VISIBLE
-            }
-        }
-
-        // Navigation Observer
-        searchViewModel.navigateToDetails.observe(viewLifecycleOwner, Observer { eventPosition ->
-            eventPosition.getContentIfNotHandled()
-                ?.let { position ->// Only proceed if the event has never been handled
-                    startOverViewFragment(position, adapter)
-                }
-        })
+        /*---------- Collectors ----------*/
+        settingCollectors()
 
         /*---------- Radio Buttons ----------*/
+        settingRadioButton()
+
+        return root
+    }
+
+    private fun settingRadioButton() {
         // set movie to be initially checked
         val moviesRadioBTN = binding.radiobuttonMovies
         val tvShowRadioBTN = binding.radiobuttonShows
@@ -98,7 +73,7 @@ class SearchFragment : Fragment() {
                 adapter.list.clear()
                 adapter.notifyDataSetChanged()
                 // create new request
-                searchViewModel.sendMovieSearchRequest(currentQuery)
+                searchViewModel.sendMoviesSearchRequest(currentQuery)
             }
         }
 
@@ -117,6 +92,7 @@ class SearchFragment : Fragment() {
                 searchViewModel.sendSeriesSearchRequest(currentQuery)
             }
         }
+
         binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener,
             androidx.appcompat.widget.SearchView.OnQueryTextListener {
             // Runs when the user presses enter inside the search view
@@ -127,7 +103,7 @@ class SearchFragment : Fragment() {
                     //save the current query to use it when clicking on filter
                     // check the filter selected
                     if (binding.radiobuttonMovies.isChecked && currentQuery.length > 1) {
-                        searchViewModel.sendMovieSearchRequest(query)
+                        searchViewModel.sendMoviesSearchRequest(query)
                     } else if (binding.radiobuttonShows.isChecked && currentQuery.length > 1) {
                         searchViewModel.sendSeriesSearchRequest(query)
                     }
@@ -150,7 +126,7 @@ class SearchFragment : Fragment() {
                     // check the filter selected
 
                     if (binding.radiobuttonMovies.isChecked && currentQuery.length > 1) {
-                        searchViewModel.sendMovieSearchRequest(query)
+                        searchViewModel.sendMoviesSearchRequest(query)
                     } else if (binding.radiobuttonShows.isChecked && currentQuery.length > 1) {
                         searchViewModel.sendSeriesSearchRequest(query)
                     }
@@ -164,13 +140,33 @@ class SearchFragment : Fragment() {
                 return false
             }
         })
-
-        return root
     }
 
-    private fun startOverViewFragment(position: Int, adapter: SearchAdapter) {
+    private fun settingCollectors() {
+        // List Observer
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                searchViewModel.searchFullMediaList.collectLatest { list ->
+                    list.itemList?.let { adapter.setNewData(it) }
+                }
+            }
+        }
+
+        // Navigation Observer
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                searchViewModel.clicked.collect { item: TmdbItem? ->
+                    if (item != null) {
+                        startOverViewFragment(item)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun startOverViewFragment(item: TmdbItem) {
         val bundle: Bundle = bundleOf()
-        bundle.putParcelable("media", adapter.list[position])
+        bundle.putParcelable("media", item)
         findNavController().navigate(R.id.navigation_overview, bundle)
     }
 
@@ -180,14 +176,14 @@ class SearchFragment : Fragment() {
         binding.errorTextview.text = ""
 
         //Return movies to be selected
-        binding.radiobuttonMovies.isChecked = true
-        binding.radiobuttonShows.isChecked = false
+        //binding.radiobuttonMovies.isChecked = true
+       // binding.radiobuttonShows.isChecked = false
 
         if (currentQuery.isNotEmpty()) {
             //save the current query to use it when clicking on filter
             // check the filter selected
             if (binding.radiobuttonMovies.isChecked) {
-                searchViewModel.sendMovieSearchRequest(currentQuery)
+                searchViewModel.sendMoviesSearchRequest(currentQuery)
             } else if (binding.radiobuttonShows.isChecked) {
                 searchViewModel.sendSeriesSearchRequest(currentQuery)
             }

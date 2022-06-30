@@ -7,5 +7,5 @@ import com.mikeschvedov.whatshouldiwatch.models.response.*
 
 @Database(entities = [Movie::class, Category::class, MovieCategoryCrossRef::class, TVShow::class, TvShowCategoryCrossRef::class], version = 1)
 abstract class MovieDB: RoomDatabase() {
-    abstract fun movieDao(): MediaDao
+    abstract fun mediaDao(): MediaDao
 }

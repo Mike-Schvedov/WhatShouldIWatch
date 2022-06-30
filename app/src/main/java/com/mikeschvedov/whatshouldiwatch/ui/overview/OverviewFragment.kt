@@ -1,6 +1,5 @@
 package com.mikeschvedov.whatshouldiwatch.ui.overview
 
-import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -42,19 +41,19 @@ class OverviewFragment : Fragment() {
 
     private fun setOnClick() {
         // Read Description onClick
-        val guideTop = binding.guideline2
-        val guideLow = binding.guideline3
+     //   val guideTop = binding.guideline2
+      //  val guideLow = binding.guideline3
         binding.readDesc.setOnClickListener {
             if (isDescOpen) { // if is open then close
-                guideTop.setGuidelinePercent(0.7f)
-                guideLow.setGuidelinePercent(0.8f)
+              //  guideTop.setGuidelinePercent(0.7f)
+               // guideLow.setGuidelinePercent(0.8f)
                 binding.mediaDescription.visibility = View.GONE
                 binding.readDesc.text = getString(R.string.read_desc)
                 binding.readDesc.setBackgroundResource(R.drawable.custom_description)
                 isDescOpen = false
             } else { // if is close then open
-                guideTop.setGuidelinePercent(0.4f)
-                guideLow.setGuidelinePercent(0.5f)
+              //  guideTop.setGuidelinePercent(0.4f)
+              //  guideLow.setGuidelinePercent(0.5f)
 
                 binding.mediaDescription.visibility = View.VISIBLE
                 binding.readDesc.text = getString(R.string.minimize)
@@ -77,8 +76,17 @@ class OverviewFragment : Fragment() {
         binding.mediaTitleTextview.text = "$title  ($year)"
         binding.mediaDescription.text = bundle?.overview
 
-        Picasso.get().load(Uri.parse(Constants.IMAGE_LOCATION + bundle?.posterPath))
+        Picasso.get().load(Uri.parse(Constants.IMAGE_LOCATION + bundle?.backdropPath))
             .placeholder(R.drawable.loading)
             .into(binding.mediaImageview)
+
+        Picasso.get().load(Uri.parse(Constants.IMAGE_LOCATION + bundle?.posterPath))
+            .placeholder(R.drawable.loading)
+            .into(binding.posterImage)
+    }
+
+    override fun onResume() {
+        super.onResume()
+
     }
 }
